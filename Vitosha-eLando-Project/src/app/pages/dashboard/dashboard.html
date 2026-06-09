@@ -1,11 +1,39 @@
-<button (click)="onLogout()">Logout</button>
-<input type="file" #fileInput>
-<button (click)="onUpload(fileInput.files)">Upload</button>
 <div>
-    @for (file of files(); track file.id) {
-    <div>{{ file.name }}</div>
-    }
-    @empty {
-    <p>This folder is empty</p>
-    }
+    <div>
+        @for (crumb of breadcrumbs(); track crumb.id; let i = $index) {
+        <span (click)="navigateTo(i)" style="cursor:pointer">{{ crumb.name }}</span>
+        <span> / </span>
+        }
+    </div>
+
+    <div>
+        <button (click)="onLogout()">Logout</button>
+    </div>
+
+    <div>
+        <input type="file" #fileInput>
+        <button (click)="onUpload(fileInput.files)">Upload</button>
+    </div>
+
+    <div>
+        <input #folderName type="text" placeholder="New folder name">
+        <button (click)="createFolder(folderName.value)">Create folder</button>
+    </div>
+
+    <div>
+        @for (folder of folders(); track folder.id) {
+        <div (click)="openFolder(folder)" style="cursor:pointer">
+            Folder: {{ folder.name }}
+        </div>
+        }
+    </div>
+
+    <div>
+        @for (file of files(); track file.id) {
+        <div>{{ file.name }}</div>
+        }
+        @empty {
+        <p>This folder is empty</p>
+        }
+    </div>
 </div>
