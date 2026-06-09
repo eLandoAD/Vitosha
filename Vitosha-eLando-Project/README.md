@@ -24,7 +24,7 @@ sudo service mysql start
 ### Frontend
 ```bash
 cd Vitosha-eLando-Project
-npm install
+npm install -g @angular.cli
 ng serve
 ```
 
