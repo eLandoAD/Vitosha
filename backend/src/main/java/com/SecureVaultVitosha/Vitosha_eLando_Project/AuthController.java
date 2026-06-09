@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +22,10 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
+    
+    @Autowired
+    private ResetTokenRepository resetTokenRepository;
+    
     // REGISTER
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
@@ -79,10 +84,50 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("token", token));
     }
 
-    // PASSWORD RESET SKELETON
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
-        // Logic comes in Phase 6
-        return ResponseEntity.ok("Password reset - coming soon");
+   // SEND RESET LINK
+@PostMapping("/forgot-password")
+public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+    String email = body.get("email");
+    Optional<User> userOpt = userRepository.findByEmail(email);
+    if (userOpt.isEmpty()) return ResponseEntity.badRequest().body("User not found");
+
+    User user = userOpt.get();
+    ResetToken resetToken = new ResetToken();
+    resetToken.setToken(UUID.randomUUID().toString());
+    resetToken.setUser(user);
+    resetToken.setExpiresAt(LocalDateTime.now().plusHours(1));
+    resetTokenRepository.save(resetToken);
+
+    System.out.println("Reset link: http://localhost:4200/reset-password?token=" + resetToken.getToken());
+    return ResponseEntity.ok("Reset link sent! Check console.");
+}
+
+// RESET PASSWORD
+@PostMapping("/reset-password")
+@Transactional
+public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+    String token = body.get("token");
+    String newPassword = body.get("newPassword");
+    String encryptedDek = body.get("encryptedDek");
+    String dekSalt = body.get("dekSalt");
+    String dekIv = body.get("dekIv");
+
+    Optional<ResetToken> tokenOpt = resetTokenRepository.findByToken(token);
+    if (tokenOpt.isEmpty()) return ResponseEntity.badRequest().body("Invalid token");
+
+    ResetToken resetToken = tokenOpt.get();
+    if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+        return ResponseEntity.badRequest().body("Token expired");
     }
+
+    User user = resetToken.getUser();
+    user.setPasswordHash(passwordEncoder.encode(newPassword));
+    user.setEncryptedDek(encryptedDek);
+    user.setDekSalt(dekSalt);
+    user.setDekIv(dekIv);
+    userRepository.save(user);
+
+    resetTokenRepository.deleteByUser(user);
+    return ResponseEntity.ok("Password reset successful");
+}
 }
