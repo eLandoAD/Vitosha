@@ -5,5 +5,6 @@ import java.util.List;
 
 public interface FileRepository extends JpaRepository<FileMetadata, Long> {
     List<FileMetadata> findByOwner(User owner);
+    List<FileMetadata> findByOwnerAndFolderIsNull(User owner);
     List<FileMetadata> findByOwnerAndFolder(User owner, Folder folder);
 }

@@ -30,8 +30,12 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
                                      @RequestParam("email") String email) throws IOException {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+
         User owner = userRepository.findByEmail(email).orElse(null);
-        if (owner == null) return ResponseEntity.badRequest().body("User not found");
+        if (owner == null) return ResponseEntity.status(404).body("User not found");
 
         Files.createDirectories(storageDir);
         Path filePath = storageDir.resolve(System.currentTimeMillis() + "_" + file.getOriginalFilename());
@@ -44,14 +48,14 @@ public class FileController {
         meta.setSize(file.getSize());
         fileRepository.save(meta);
 
-        return ResponseEntity.ok("File uploaded: " + file.getOriginalFilename());
+        return ResponseEntity.status(201).body("File uploaded: " + file.getOriginalFilename());
     }
 
     // LIST
     @GetMapping("/list")
     public ResponseEntity<?> list(@RequestParam("email") String email) {
         User owner = userRepository.findByEmail(email).orElse(null);
-        if (owner == null) return ResponseEntity.badRequest().body("User not found");
+        if (owner == null) return ResponseEntity.status(404).body("User not found");
         List<FileMetadata> files = fileRepository.findByOwner(owner);
         return ResponseEntity.ok(files);
     }
@@ -60,12 +64,16 @@ public class FileController {
     @GetMapping("/download/{id}")
     public ResponseEntity<?> download(@PathVariable Long id) throws IOException {
         Optional<FileMetadata> metaOpt = fileRepository.findById(id);
-        if (metaOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (metaOpt.isEmpty()) return ResponseEntity.status(404).body("File not found");
 
         FileMetadata meta = metaOpt.get();
         Path filePath = Paths.get(meta.getPath());
-        Resource resource = new UrlResource(filePath.toUri());
 
+        if (!Files.exists(filePath)) {
+            return ResponseEntity.status(404).body("File not found on disk");
+        }
+
+        Resource resource = new UrlResource(filePath.toUri());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + meta.getName() + "\"")
                 .body(resource);
@@ -74,20 +82,25 @@ public class FileController {
     // RENAME
     @PutMapping("/rename/{id}")
     public ResponseEntity<?> rename(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String newName = body.get("name");
+        if (newName == null || newName.isBlank()) {
+            return ResponseEntity.badRequest().body("Name is required");
+        }
+
         Optional<FileMetadata> metaOpt = fileRepository.findById(id);
-        if (metaOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (metaOpt.isEmpty()) return ResponseEntity.status(404).body("File not found");
 
         FileMetadata meta = metaOpt.get();
-        meta.setName(body.get("name"));
+        meta.setName(newName);
         fileRepository.save(meta);
-        return ResponseEntity.ok("Renamed to: " + body.get("name"));
+        return ResponseEntity.ok("Renamed to: " + newName);
     }
 
     // DELETE
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) throws IOException {
         Optional<FileMetadata> metaOpt = fileRepository.findById(id);
-        if (metaOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (metaOpt.isEmpty()) return ResponseEntity.status(404).body("File not found");
 
         FileMetadata meta = metaOpt.get();
         Files.deleteIfExists(Paths.get(meta.getPath()));
