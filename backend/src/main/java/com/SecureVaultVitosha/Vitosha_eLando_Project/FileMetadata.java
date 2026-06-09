@@ -23,12 +23,14 @@ public class FileMetadata {
     private long size;
 
     private String fileIv;
+
+    @ManyToOne
+    @JoinColumn(name = "folder_id")
+    private Folder folder;
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-
-    public String getFileIv() { return fileIv; }
-public void setFileIv(String fileIv) { this.fileIv = fileIv; }
 
     public User getOwner() { return owner; }
     public void setOwner(User owner) { this.owner = owner; }
@@ -41,4 +43,10 @@ public void setFileIv(String fileIv) { this.fileIv = fileIv; }
 
     public long getSize() { return size; }
     public void setSize(long size) { this.size = size; }
+
+    public String getFileIv() { return fileIv; }
+    public void setFileIv(String fileIv) { this.fileIv = fileIv; }
+
+    public Folder getFolder() { return folder; }
+    public void setFolder(Folder folder) { this.folder = folder; }
 }

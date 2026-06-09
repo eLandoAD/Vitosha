@@ -1,6 +1,7 @@
 package com.SecureVaultVitosha.Vitosha_eLando_Project;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "folders")
@@ -17,6 +18,7 @@ public class Folder {
     @Column(nullable = false)
     private String name;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "parent_folder_id")
     private Folder parentFolder;
