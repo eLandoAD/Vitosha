@@ -25,27 +25,35 @@ public class AuthController {
     
     @Autowired
     private ResetTokenRepository resetTokenRepository;
-    
+
     // REGISTER
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String password = body.get("password");
+public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
+    String email = body.get("email");
+    String password = body.get("password");
 
-        if (userRepository.findByEmail(email).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already in use");
-        }
-
-        User user = new User();
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(password));
-        user.setVerificationToken(UUID.randomUUID().toString());
-        userRepository.save(user);
-
-        System.out.println("Verify link: http://localhost:8080/auth/verify?token=" + user.getVerificationToken());
-
-        return ResponseEntity.ok("Registered! Check console for verify link.");
+    if (email == null || email.isBlank()) {
+        return ResponseEntity.badRequest().body("Email is required");
     }
+    if (password == null || password.length() < 6) {
+        return ResponseEntity.badRequest().body("Password must be at least 6 characters");
+    }
+    if (!email.contains("@")) {
+        return ResponseEntity.badRequest().body("Invalid email format");
+    }
+    if (userRepository.findByEmail(email).isPresent()) {
+        return ResponseEntity.status(409).body("Email already in use");
+    }
+
+    User user = new User();
+    user.setEmail(email);
+    user.setPasswordHash(passwordEncoder.encode(password));
+    user.setVerificationToken(UUID.randomUUID().toString());
+    userRepository.save(user);
+
+    System.out.println("Verify link: http://localhost:8080/auth/verify?token=" + user.getVerificationToken());
+    return ResponseEntity.status(201).body("Registered! Check console for verify link.");
+}
 
     // VERIFY EMAIL
     @GetMapping("/verify")
@@ -63,26 +71,30 @@ public class AuthController {
 
     // LOGIN
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String password = body.get("password");
+public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+    String email = body.get("email");
+    String password = body.get("password");
 
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
-
-        User user = userOpt.get();
-        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            return ResponseEntity.badRequest().body("Wrong password");
-        }
-        if (!user.isVerified()) {
-            return ResponseEntity.badRequest().body("Email not verified");
-        }
-
-        String token = jwtUtil.generateToken(email);
-        return ResponseEntity.ok(Map.of("token", token));
+    if (email == null || password == null) {
+        return ResponseEntity.badRequest().body("Email and password are required");
     }
+
+    Optional<User> userOpt = userRepository.findByEmail(email);
+    if (userOpt.isEmpty()) {
+        return ResponseEntity.status(401).body("Invalid credentials");
+    }
+
+    User user = userOpt.get();
+    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+        return ResponseEntity.status(401).body("Invalid credentials");
+    }
+    if (!user.isVerified()) {
+        return ResponseEntity.status(403).body("Email not verified");
+    }
+
+    String token = jwtUtil.generateToken(email);
+    return ResponseEntity.ok(Map.of("token", token));
+}
 
    // SEND RESET LINK
 @PostMapping("/forgot-password")
