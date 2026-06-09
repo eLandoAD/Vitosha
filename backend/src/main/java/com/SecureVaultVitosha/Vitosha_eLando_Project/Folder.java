@@ -3,8 +3,8 @@ package com.SecureVaultVitosha.Vitosha_eLando_Project;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "files")
-public class FileMetadata {
+@Table(name = "folders")
+public class Folder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,18 +17,13 @@ public class FileMetadata {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private String path;
+    @ManyToOne
+    @JoinColumn(name = "parent_folder_id")
+    private Folder parentFolder;
 
-    private long size;
-
-    private String fileIv;
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-
-    public String getFileIv() { return fileIv; }
-public void setFileIv(String fileIv) { this.fileIv = fileIv; }
 
     public User getOwner() { return owner; }
     public void setOwner(User owner) { this.owner = owner; }
@@ -36,9 +31,6 @@ public void setFileIv(String fileIv) { this.fileIv = fileIv; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public String getPath() { return path; }
-    public void setPath(String path) { this.path = path; }
-
-    public long getSize() { return size; }
-    public void setSize(long size) { this.size = size; }
+    public Folder getParentFolder() { return parentFolder; }
+    public void setParentFolder(Folder parentFolder) { this.parentFolder = parentFolder; }
 }
