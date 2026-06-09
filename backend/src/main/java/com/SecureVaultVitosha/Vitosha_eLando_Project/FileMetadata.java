@@ -10,6 +10,7 @@ public class FileMetadata {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    
     @ManyToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
@@ -27,6 +28,9 @@ public class FileMetadata {
     @ManyToOne
     @JoinColumn(name = "folder_id")
     private Folder folder;
+
+    public Folder getFolder() { return folder; }
+    public void setFolder(Folder folder) { this.folder = folder; }
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -46,7 +50,4 @@ public class FileMetadata {
 
     public String getFileIv() { return fileIv; }
     public void setFileIv(String fileIv) { this.fileIv = fileIv; }
-
-    public Folder getFolder() { return folder; }
-    public void setFolder(Folder folder) { this.folder = folder; }
 }

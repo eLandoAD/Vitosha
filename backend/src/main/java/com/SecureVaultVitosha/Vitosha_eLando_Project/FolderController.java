@@ -32,12 +32,33 @@ public class FolderController {
         folder.setName(body.get("name"));
 
         if (body.get("parentFolderId") != null) {
-            Optional<Folder> parent = folderRepository.findById(Long.parseLong(body.get("parentFolderId")));
-            parent.ifPresent(folder::setParentFolder);
+            folderRepository.findById(Long.parseLong(body.get("parentFolderId")))
+                    .ifPresent(folder::setParentFolder);
         }
 
         folderRepository.save(folder);
         return ResponseEntity.ok("Folder created: " + folder.getName());
+    }
+
+    // RENAME
+    @PutMapping("/rename/{id}")
+    public ResponseEntity<?> rename(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        Optional<Folder> folderOpt = folderRepository.findById(id);
+        if (folderOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        Folder folder = folderOpt.get();
+        folder.setName(body.get("name"));
+        folderRepository.save(folder);
+        return ResponseEntity.ok("Renamed to: " + body.get("name"));
+    }
+
+    // DELETE
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        Optional<Folder> folderOpt = folderRepository.findById(id);
+        if (folderOpt.isEmpty()) return ResponseEntity.notFound().build();
+        folderRepository.deleteById(id);
+        return ResponseEntity.ok("Deleted");
     }
 
     // LIST CONTENTS
@@ -52,10 +73,10 @@ public class FolderController {
 
         if (folderId == null) {
             subfolders = folderRepository.findByOwnerAndParentFolderIsNull(owner);
-            files = fileRepository.findByOwner(owner);
+            files = fileRepository.findByOwnerAndFolderIsNull(owner);
         } else {
             Folder folder = folderRepository.findById(folderId).orElse(null);
-            if (folder == null) return ResponseEntity.badRequest().body("Folder not found");
+            if (folder == null) return ResponseEntity.notFound().build();
             subfolders = folderRepository.findByOwnerAndParentFolder(owner, folder);
             files = fileRepository.findByOwnerAndFolder(owner, folder);
         }
@@ -63,21 +84,23 @@ public class FolderController {
         return ResponseEntity.ok(Map.of("folders", subfolders, "files", files));
     }
 
-    // RENAME
-    @PutMapping("/rename/{id}")
-    public ResponseEntity<?> rename(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        Folder folder = folderRepository.findById(id).orElse(null);
-        if (folder == null) return ResponseEntity.notFound().build();
-        folder.setName(body.get("name"));
-        folderRepository.save(folder);
-        return ResponseEntity.ok("Renamed to: " + body.get("name"));
-    }
+    // MOVE FILE TO FOLDER
+    @PutMapping("/move-file/{fileId}")
+    public ResponseEntity<?> moveFile(@PathVariable Long fileId,
+                                       @RequestBody Map<String, String> body) {
+        Optional<FileMetadata> fileOpt = fileRepository.findById(fileId);
+        if (fileOpt.isEmpty()) return ResponseEntity.notFound().build();
 
-    // DELETE
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        if (!folderRepository.existsById(id)) return ResponseEntity.notFound().build();
-        folderRepository.deleteById(id);
-        return ResponseEntity.ok("Deleted");
+        FileMetadata file = fileOpt.get();
+
+        if (body.get("folderId") == null) {
+            file.setFolder(null);
+        } else {
+            folderRepository.findById(Long.parseLong(body.get("folderId")))
+                    .ifPresent(file::setFolder);
+        }
+
+        fileRepository.save(file);
+        return ResponseEntity.ok("File moved");
     }
 }
