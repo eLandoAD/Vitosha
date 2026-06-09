@@ -2,7 +2,7 @@
 <input type="file" #fileInput>
 <button (click)="onUpload(fileInput.files)">Upload</button>
 <div>
-    @for (file of files; track file.id) {
+    @for (file of files(); track file.id) {
     <div>{{ file.name }}</div>
     }
     @empty {
