@@ -20,11 +20,22 @@ public class User {
 
     private String verificationToken;
 
+    private String encryptedDek;
+    private String dekSalt;
+    private String dekIv;
+
     // Getters and Setters
     public Long getId() {
         return id;
     }
+public String getEncryptedDek() { return encryptedDek; }
+public void setEncryptedDek(String encryptedDek) { this.encryptedDek = encryptedDek; }
 
+public String getDekSalt() { return dekSalt; }
+public void setDekSalt(String dekSalt) { this.dekSalt = dekSalt; }
+
+public String getDekIv() { return dekIv; }
+public void setDekIv(String dekIv) { this.dekIv = dekIv; }
     public void setId(Long id) {
         this.id = id;
     }
