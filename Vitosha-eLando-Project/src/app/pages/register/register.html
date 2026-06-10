@@ -1,8 +1,38 @@
-<div>
-    <input type="email" #emailInput>
-    <input type="text" #usernameInput>
-    <input type="password" #passwordInput>
-    <button (click)="onRegister(emailInput.value, usernameInput.value, passwordInput.value)">
-        Register
+<div class="min-h-screen bg-zinc-950 flex">
+  <div class="w-full md:w-1/2 flex flex-col justify-between px-12 py-16">
+    <div>
+      <h1 class="text-white text-xl font-semibold tracking-tight">SecureVault</h1>
+    </div>
+
+    <div>
+      <p class="text-zinc-600 text-xs uppercase tracking-widest mb-3">Get started</p>
+      <h2 class="text-white text-4xl font-light mb-10">Create your<br>vault</h2>
+
+      <div class="flex flex-col gap-3 max-w-sm">
+        <input type="email" #emailInput placeholder="Email address"
+          class="bg-transparent border-b border-zinc-700 text-white text-sm py-3 placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition">
+
+        <input type="text" #usernameInput placeholder="Username"
+          class="bg-transparent border-b border-zinc-700 text-white text-sm py-3 placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition">
+
+        <input type="password" #passwordInput placeholder="Password"
+          class="bg-transparent border-b border-zinc-700 text-white text-sm py-3 placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition">
+
+        <button (click)="onRegister(emailInput.value, usernameInput.value, passwordInput.value)"
+          class="mt-6 self-start bg-white text-zinc-900 text-sm font-medium px-8 py-3 rounded-full hover:bg-zinc-200 transition">
+          Create account
         </button>
+      </div>
+    </div>
+
+    <div class="flex gap-6 text-zinc-600 text-xs">
+      <button (click)="goToLogin()" class="hover:text-white transition">Already have an account?</button>
+    </div>
+  </div>
+
+  <div class="hidden md:flex w-1/2 bg-zinc-900 border-l border-zinc-800 items-end px-12 py-16">
+    <p class="text-zinc-700 text-xs leading-relaxed max-w-xs">
+      Your encryption keys are generated in your browser. We never see your password or your files.
+    </p>
+  </div>
 </div>

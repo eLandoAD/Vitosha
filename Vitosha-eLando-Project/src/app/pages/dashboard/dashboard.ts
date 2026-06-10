@@ -13,15 +13,19 @@ import { Folder } from '../../services/folder';
 export class Dashboard implements OnInit {
 
   private fileService = inject(File);
-  private auth = inject(Auth);
+  protected auth = inject(Auth);
   private router = inject(Router);
   files = signal<any[]>([])
   private folderService = inject(Folder);
   currentFolderId = signal<number | null>(null);
   breadcrumbs = signal<{ id: number | null, name: string }[]>([{ id: null, name: 'Home' }]);
   folders = signal<any[]>([]);
+  showWelcome = signal(true);
+  fadingWelcome = signal(false);
 
   public ngOnInit() {
+    setTimeout(() => this.fadingWelcome.set(true), 1500);
+    setTimeout(() => this.showWelcome.set(false), 2000);
     this.fileService.getFiles().subscribe((data: any) => this.files.set(data));
     this.folderService.getFolders(this.currentFolderId()).subscribe((data: any) => this.folders.set(data));
   }

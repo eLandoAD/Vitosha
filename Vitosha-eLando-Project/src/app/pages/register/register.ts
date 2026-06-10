@@ -29,4 +29,8 @@ export class Register {
       error: (error) => console.log(error)
     });
   }
+
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
 }

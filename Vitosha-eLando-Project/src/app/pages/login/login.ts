@@ -1,10 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { Auth } from '../../services/auth';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
-  imports: [RouterLink],
+  imports: [],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -15,8 +15,20 @@ export class Login {
 
   public onLogin(email: string, password: string) {
     this.auth.login(email, password).subscribe({
-        next: () => this.router.navigate(['/dashboard']),
-        error: (error) => console.log(error)
+      next: (response: any) => {
+        this.auth.setUsername(response.username);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (error) => console.log(error)
     });
-}
+  }
+
+  goToRegister() {
+    this.router.navigate(['/register']);
+  }
+
+  goToForgotPassword() {
+    this.router.navigate(['/forgot-password']);
+  }
+
 }

@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-verify-email',
@@ -6,4 +7,11 @@ import { Component } from '@angular/core';
   templateUrl: './verify-email.html',
   styleUrl: './verify-email.css',
 })
-export class VerifyEmail {}
+export class VerifyEmail {
+
+  private router = inject(Router);
+  
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
+}

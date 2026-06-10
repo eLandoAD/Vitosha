@@ -1,2 +1,9 @@
-<p>Check your email for a verification link</p>
-<a routerLink="/login">Back to login</a>
+<div class="min-h-screen bg-zinc-950 flex items-center justify-center">
+  <div class="text-center">
+    <h1 class="text-white text-xl font-semibold mb-2">SecureVault</h1>
+    <p class="text-zinc-500 text-sm mb-8">Check your email for a verification link.</p>
+    <button (click)="goToLogin()" class="text-zinc-400 text-xs hover:text-white transition">
+      Back to login
+    </button>
+  </div>
+</div>

@@ -23,8 +23,8 @@
     </div>
 
     <div class="flex gap-6 text-zinc-600 text-xs">
-      <a routerLink="/register" class="hover:text-white transition">Create account</a>
-      <a routerLink="/forgot-password" class="hover:text-white transition">Forgot password?</a>
+      <button (click)="goToRegister()" class="hover:text-white transition text-xs">Create account</button>
+      <button (click)="goToForgotPassword()" class="hover:text-white transition text-xs">Forgot password?</button>
     </div>
   </div>
 

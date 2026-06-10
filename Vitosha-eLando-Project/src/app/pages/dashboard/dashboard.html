@@ -1,39 +1,67 @@
-<div>
-    <div>
+@if (showWelcome() === true) {
+<div class="fixed inset-0 bg-zinc-950 flex items-center justify-center z-50"
+    [style.opacity]="fadingWelcome() ? '0' : '1'" style="transition: opacity 0.5s ease;">
+    <div style="animation: zoomIn 0.6s ease forwards;">
+        <p class="text-zinc-600 text-xs uppercase tracking-widest mb-4 text-center"
+            style="font-family:'DM Sans',sans-serif;">Welcome back</p>
+        <h1 class="text-white text-7xl text-center" style="font-family:'DM Serif Display',serif;font-weight:400;">{{
+            auth.getUsername() }}</h1>
+    </div>
+</div>
+}
+
+<div class="min-h-screen bg-zinc-950 text-white flex flex-col">
+
+    <div class="border-b border-zinc-800 px-8 py-4 flex items-center justify-between">
+        <h1 class="text-white text-lg font-semibold tracking-tight">SecureVault</h1>
+        <button (click)="onLogout()" class="text-zinc-500 text-xs hover:text-white transition">
+            Sign out
+        </button>
+    </div>
+
+    <div class="px-8 py-4 border-b border-zinc-800 flex items-center gap-2 text-xs text-zinc-500">
         @for (crumb of breadcrumbs(); track crumb.id; let i = $index) {
-        <span (click)="navigateTo(i)" style="cursor:pointer">{{ crumb.name }}</span>
-        <span> / </span>
+        <span (click)="navigateTo(i)" class="hover:text-white cursor-pointer transition">{{ crumb.name }}</span>
+        <span>/</span>
         }
     </div>
 
-    <div>
-        <button (click)="onLogout()">Logout</button>
+    <div class="px-8 py-4 border-b border-zinc-800 flex items-center gap-4">
+        <input type="file" #fileInput class="text-zinc-500 text-xs">
+        <button (click)="onUpload(fileInput.files)"
+            class="bg-white text-zinc-900 text-xs font-medium px-4 py-2 rounded-full hover:bg-zinc-200 transition">
+            Upload
+        </button>
+        <div class="flex items-center gap-2 ml-4">
+            <input #folderName type="text" placeholder="New folder"
+                class="bg-transparent border-b border-zinc-700 text-white text-xs py-1 placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition w-32">
+            <button (click)="createFolder(folderName.value)" class="text-zinc-500 text-xs hover:text-white transition">
+                + Create
+            </button>
+        </div>
     </div>
 
-    <div>
-        <input type="file" #fileInput>
-        <button (click)="onUpload(fileInput.files)">Upload</button>
-    </div>
-
-    <div>
-        <input #folderName type="text" placeholder="New folder name">
-        <button (click)="createFolder(folderName.value)">Create folder</button>
-    </div>
-
-    <div>
+    <div class="px-8 py-6 flex-1">
         @for (folder of folders(); track folder.id) {
-        <div (click)="openFolder(folder)" style="cursor:pointer">
-            Folder: {{ folder.name }}
+        <div (click)="openFolder(folder)"
+            class="flex items-center gap-3 py-3 border-b border-zinc-900 hover:bg-zinc-900 px-3 rounded cursor-pointer transition">
+            <span class="text-zinc-500 text-xs">FOLDER</span>
+            <span class="text-white text-sm">{{ folder.name }}</span>
+        </div>
+        }
+
+        @for (file of files(); track file.id) {
+        <div class="flex items-center gap-3 py-3 border-b border-zinc-900 hover:bg-zinc-900 px-3 rounded transition">
+            <span class="text-zinc-500 text-xs">FILE</span>
+            <span class="text-white text-sm flex-1">{{ file.name }}</span>
+        </div>
+        }
+
+        @if (folders().length === 0 && files().length === 0) {
+        <div class="flex items-center justify-center h-64">
+            <p class="text-zinc-700 text-sm">This folder is empty</p>
         </div>
         }
     </div>
 
-    <div>
-        @for (file of files(); track file.id) {
-        <div>{{ file.name }}</div>
-        }
-        @empty {
-        <p>This folder is empty</p>
-        }
-    </div>
 </div>

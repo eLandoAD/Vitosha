@@ -37,4 +37,8 @@ export class ResetPassword {
       error: (error) => console.log(error)
     });
   }
+
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
 }

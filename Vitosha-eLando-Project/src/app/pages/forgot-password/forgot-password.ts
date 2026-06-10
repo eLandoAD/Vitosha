@@ -20,4 +20,8 @@ export class ForgotPassword {
       error: (error) => console.log(error)
     });
   }
+
+  goToLogin() {
+    this.router.navigate(['/login']);
+  }
 }
