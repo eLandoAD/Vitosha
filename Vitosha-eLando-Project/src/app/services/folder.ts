@@ -9,11 +9,14 @@ export class Folder {
     private http = inject(HttpClient);
 
     private getHeaders() {
-    return new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
-}
+        return new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
+    }
 
     public getFolders(parentId: number | null) {
-        return this.http.get(`http://localhost:8080/folders?parentId=${parentId}`, { headers: this.getHeaders() });
+        const url = parentId !== null
+            ? `http://localhost:8080/folders?parentId=${parentId}`
+            : `http://localhost:8080/folders`;
+        return this.http.get(url, { headers: this.getHeaders() });
     }
 
     public createFolder(name: string, parentId: number | null) {

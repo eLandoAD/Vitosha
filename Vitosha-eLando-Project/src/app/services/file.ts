@@ -10,12 +10,15 @@ export class File {
     private auth = inject(Auth);
     private crypto = inject(Crypto);
 
-    public getFiles() {
+    public getFiles(folderId: number | null) {
         const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
-        return this.http.get('http://localhost:8080/files', { headers });
+        const url = folderId !== null
+            ? `http://localhost:8080/files?folderId=${folderId}`
+            : `http://localhost:8080/files`;
+        return this.http.get(url, { headers });
     }
 
-    async upload(file: Blob) {
+    async upload(file: Blob, folderId: number | null) {
         const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
         const dek = this.auth.getDek();
         const arrayBuffer = await file.arrayBuffer();
@@ -23,9 +26,12 @@ export class File {
         const ivB64 = btoa(String.fromCharCode(...new Uint8Array(iv)));
         const encryptedBlob = new Blob([encrypted]);
         const formData = new FormData();
-        formData.append('file', encryptedBlob);
+        formData.append('file', encryptedBlob, (file as any).name || 'file');
         formData.append('iv', ivB64);
-        return this.http.post('http://localhost:8080/files/upload', formData, { headers });
+        if (folderId !== null) {
+            formData.append('folderId', folderId.toString());
+        }
+        return this.http.post('http://localhost:8080/files/upload', formData, { headers }).toPromise();
     }
 
     async download(fileId: number, fileName: string) {
@@ -48,5 +54,10 @@ export class File {
     public delete(fileId: number) {
         const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
         return this.http.delete('http://localhost:8080/files/' + fileId, { headers });
+    }
+
+    public renameFile(fileId: number, name: string) {
+        const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
+        return this.http.put(`http://localhost:8080/files/rename/${fileId}`, { name }, { headers });
     }
 }

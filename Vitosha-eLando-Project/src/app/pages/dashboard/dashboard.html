@@ -4,16 +4,19 @@
     <div style="animation: zoomIn 0.6s ease forwards;">
         <p class="text-zinc-600 text-xs uppercase tracking-widest mb-4 text-center"
             style="font-family:'DM Sans',sans-serif;">Welcome back</p>
-        <h1 class="text-white text-7xl text-center" style="font-family:'DM Serif Display',serif;font-weight:400;">{{
-            auth.getUsername() }}</h1>
+        <h1 class="text-white text-7xl text-center" style="font-family:'DM Serif Display',serif;font-weight:400;">
+            {{ auth.getUsername() }}
+        </h1>
     </div>
 </div>
 }
 
-<div class="min-h-screen bg-zinc-950 text-white flex flex-col">
+<div class="min-h-screen bg-zinc-950 text-white flex flex-col relative">
 
-    <div class="border-b border-zinc-800 px-8 py-4 flex items-center justify-between">
-        <h1 class="text-white text-lg font-semibold tracking-tight">SecureVault</h1>
+    <div class="absolute top-4 right-8 flex items-center gap-4 z-10">
+        <button (click)="goToChangePassword()" class="text-zinc-500 text-xs hover:text-white transition">
+            Change password
+        </button>
         <button (click)="onLogout()" class="text-zinc-500 text-xs hover:text-white transition">
             Sign out
         </button>
@@ -26,42 +29,112 @@
         }
     </div>
 
-    <div class="px-8 py-4 border-b border-zinc-800 flex items-center gap-4">
-        <input type="file" #fileInput class="text-zinc-500 text-xs">
+    <div class="px-8 py-4 border-b border-zinc-800 flex items-center gap-4 flex-wrap">
+        <label
+            class="cursor-pointer bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs px-4 py-2 rounded-full hover:bg-zinc-700 transition">
+            Choose file
+            <input type="file" #fileInput class="hidden" (change)="onFileSelected(fileInput)">
+        </label>
+        <span class="text-zinc-500 text-xs">{{ selectedFileName() }}</span>
         <button (click)="onUpload(fileInput.files)"
-            class="bg-white text-zinc-900 text-xs font-medium px-4 py-2 rounded-full hover:bg-zinc-200 transition">
-            Upload
+            class="bg-white text-zinc-900 text-xs font-medium px-4 py-2 rounded-full hover:bg-zinc-200 transition"
+            [disabled]="uploading()">
+            {{ uploading() ? 'Encrypting...' : 'Upload' }}
         </button>
         <div class="flex items-center gap-2 ml-4">
             <input #folderName type="text" placeholder="New folder"
-                class="bg-transparent border-b border-zinc-700 text-white text-xs py-1 placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition w-32">
-            <button (click)="createFolder(folderName.value)" class="text-zinc-500 text-xs hover:text-white transition">
+                class="bg-transparent border-b border-zinc-700 text-white text-xs py-1 placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition w-32"
+                (keyup.enter)="createFolder(folderName.value); folderName.value = ''">
+            <button (click)="createFolder(folderName.value); folderName.value = ''"
+                class="text-zinc-500 text-xs hover:text-white transition">
                 + Create
+            </button>
+        </div>
+        <div class="flex items-center gap-3 ml-auto">
+            <input type="text" placeholder="Search..."
+                class="bg-transparent border-b border-zinc-700 text-white text-xs py-1 placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition w-32"
+                (input)="searchQuery.set($any($event.target).value)">
+            <span class="text-zinc-600 text-xs">Sort:</span>
+            <button (click)="sortBy.set('name')"
+                [class]="sortBy() === 'name' ? 'text-white text-xs' : 'text-zinc-600 text-xs hover:text-white transition'">
+                Name
+            </button>
+            <button (click)="sortBy.set('size')"
+                [class]="sortBy() === 'size' ? 'text-white text-xs' : 'text-zinc-600 text-xs hover:text-white transition'">
+                Size
+            </button>
+            <button (click)="sortBy.set('date')"
+                [class]="sortBy() === 'date' ? 'text-white text-xs' : 'text-zinc-600 text-xs hover:text-white transition'">
+                Date
             </button>
         </div>
     </div>
 
     <div class="px-8 py-6 flex-1">
-        @for (folder of folders(); track folder.id) {
-        <div (click)="openFolder(folder)"
-            class="flex items-center gap-3 py-3 border-b border-zinc-900 hover:bg-zinc-900 px-3 rounded cursor-pointer transition">
-            <span class="text-zinc-500 text-xs">FOLDER</span>
-            <span class="text-white text-sm">{{ folder.name }}</span>
+
+        @for (folder of getFilteredFolders(); track folder.id) {
+        <div class="flex items-center gap-3 py-3 border-b border-zinc-900 hover:bg-zinc-900 px-3 rounded transition"
+            (dragover)="onDragOver($event)" (drop)="onDrop($event, folder.id)">
+            <span class="text-zinc-500 text-xs font-mono w-6 text-center">▷</span>
+
+            @if (renamingFolderId() === folder.id) {
+            <input type="text" [value]="folder.name"
+                class="bg-transparent border-b border-zinc-500 text-white text-sm flex-1 focus:outline-none"
+                (keyup.enter)="renameFolder(folder.id, $any($event.target).value)" (blur)="renamingFolderId.set(null)"
+                autofocus>
+            } @else {
+            <span (click)="openFolder(folder)" class="text-white text-sm flex-1 cursor-pointer">
+                {{ folder.name }}
+            </span>
+            <span class="text-zinc-700 text-xs">{{ folder.fileCount }} files</span>
+            }
+
+            <button (click)="renamingFolderId.set(folder.id)"
+                class="text-zinc-600 text-xs hover:text-white transition mr-2">
+                Rename
+            </button>
+            <button (click)="onDeleteFolder(folder.id)" class="text-zinc-600 text-xs hover:text-red-400 transition">
+                Delete
+            </button>
         </div>
         }
 
-        @for (file of files(); track file.id) {
-        <div class="flex items-center gap-3 py-3 border-b border-zinc-900 hover:bg-zinc-900 px-3 rounded transition">
-            <span class="text-zinc-500 text-xs">FILE</span>
+        @for (file of getFilteredAndSortedFiles(); track file.id) {
+        <div class="flex items-center gap-3 py-3 border-b border-zinc-900 hover:bg-zinc-900 px-3 rounded transition"
+            draggable="true" (dragstart)="onDragStart($event, file.id)">
+            <span class="text-zinc-500 text-xs font-mono w-6 text-center">{{ getFileIcon(file.name) }}</span>
+
+            @if (renamingFileId() === file.id) {
+            <input type="text" [value]="file.name"
+                class="bg-transparent border-b border-zinc-500 text-white text-sm flex-1 focus:outline-none"
+                (keyup.enter)="renameFile(file.id, $any($event.target).value)" (blur)="renamingFileId.set(null)"
+                autofocus>
+            } @else {
             <span class="text-white text-sm flex-1">{{ file.name }}</span>
+            }
+
+            <span class="text-zinc-600 text-xs">{{ formatSize(file.size) }}</span>
+            <span class="text-zinc-700 text-xs">{{ file.uploadedAt | date:'MMM d' }}</span>
+            <button (click)="renamingFileId.set(file.id)"
+                class="text-zinc-600 text-xs hover:text-white transition mr-2">
+                Rename
+            </button>
+            <button (click)="onDownload(file.id, file.name)"
+                class="bg-white text-zinc-900 text-xs font-medium px-4 py-2 rounded-full hover:bg-zinc-200 transition">
+                Download
+            </button>
+            <button (click)="onDeleteFile(file.id)" class="text-zinc-600 text-xs hover:text-red-400 transition ml-2">
+                Delete
+            </button>
         </div>
         }
 
-        @if (folders().length === 0 && files().length === 0) {
+        @if (getFilteredFolders().length === 0 && getFilteredAndSortedFiles().length === 0) {
         <div class="flex items-center justify-center h-64">
             <p class="text-zinc-700 text-sm">This folder is empty</p>
         </div>
         }
+
     </div>
 
 </div>

@@ -1,9 +1,15 @@
 <div class="min-h-screen bg-zinc-950 flex items-center justify-center">
-  <div class="text-center">
+  <div class="text-center max-w-sm px-8">
     <h1 class="text-white text-xl font-semibold mb-2">SecureVault</h1>
-    <p class="text-zinc-500 text-sm mb-8">Check your email for a verification link.</p>
-    <button (click)="goToLogin()" class="text-zinc-400 text-xs hover:text-white transition">
-      Back to login
-    </button>
+    <p class="text-zinc-400 text-sm mb-6">One last step — verify your email.</p>
+    <a [href]="auth.getVerifyLink()"
+      class="bg-white text-zinc-900 text-sm font-medium px-8 py-3 rounded-full hover:bg-zinc-200 transition">
+      Click to verify your account
+    </a>
+    <div class="mt-8">
+      <button (click)="goToLogin()" class="text-zinc-600 text-xs hover:text-white transition">
+        Back to login
+      </button>
+    </div>
   </div>
 </div>

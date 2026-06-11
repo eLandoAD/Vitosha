@@ -11,6 +11,7 @@ export class Auth {
     private crypto = inject(Crypto);
     private http = inject(HttpClient);
     private username: string | null = null;
+    private verifyLink: string | null = null;
 
     public register(email: string, username: string, password: string, saltB64: string, ivB64: string, wrappedDekB64: string) {
         return this.http.post('http://localhost:8080/auth/register', { email, username, password, saltB64, ivB64, wrappedDekB64 });
@@ -62,6 +63,15 @@ export class Auth {
     getUsername() {
         return this.username;
     }
+
+    setVerifyLink(link: string) {
+        this.verifyLink = link;
+    }
+
+    getVerifyLink() {
+        return this.verifyLink;
+    }
+
 
 
 }

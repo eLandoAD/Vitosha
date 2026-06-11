@@ -1,12 +1,21 @@
 package com.SecureVaultVitosha.Vitosha_eLando_Project;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/folders")
@@ -21,30 +30,51 @@ public class FolderController {
     @Autowired
     private FileRepository fileRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    private User getUserFromToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer "))
+            return null;
+        String token = authHeader.substring(7);
+        String email = jwtUtil.extractEmail(token);
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
     // CREATE
-    @PostMapping("/create")
-    public ResponseEntity<?> create(@RequestBody Map<String, String> body) {
-        User owner = userRepository.findByEmail(body.get("email")).orElse(null);
-        if (owner == null) return ResponseEntity.badRequest().body("User not found");
+    @PostMapping
+    public ResponseEntity<?> create(@RequestBody Map<String, Object> body,
+            @RequestHeader("Authorization") String authHeader) {
+        User owner = getUserFromToken(authHeader);
+        if (owner == null)
+            return ResponseEntity.status(401).body("Unauthorized");
 
         Folder folder = new Folder();
         folder.setOwner(owner);
-        folder.setName(body.get("name"));
+        folder.setName((String) body.get("name"));
 
-        if (body.get("parentFolderId") != null) {
-            folderRepository.findById(Long.parseLong(body.get("parentFolderId")))
+        Object parentId = body.get("parentId");
+        if (parentId != null) {
+            folderRepository.findById(Long.parseLong(parentId.toString()))
                     .ifPresent(folder::setParentFolder);
         }
 
         folderRepository.save(folder);
-        return ResponseEntity.ok("Folder created: " + folder.getName());
+        return ResponseEntity.ok(Map.of("message", "Folder created", "name", folder.getName()));
     }
 
     // RENAME
-    @PutMapping("/rename/{id}")
-    public ResponseEntity<?> rename(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    @PutMapping("/{id}")
+    public ResponseEntity<?> rename(@PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader("Authorization") String authHeader) {
+        User owner = getUserFromToken(authHeader);
+        if (owner == null)
+            return ResponseEntity.status(401).body("Unauthorized");
+
         Optional<Folder> folderOpt = folderRepository.findById(id);
-        if (folderOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (folderOpt.isEmpty())
+            return ResponseEntity.notFound().build();
 
         Folder folder = folderOpt.get();
         folder.setName(body.get("name"));
@@ -53,46 +83,63 @@ public class FolderController {
     }
 
     // DELETE
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        User owner = getUserFromToken(authHeader);
+        if (owner == null)
+            return ResponseEntity.status(401).body("Unauthorized");
+
         Optional<Folder> folderOpt = folderRepository.findById(id);
-        if (folderOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (folderOpt.isEmpty())
+            return ResponseEntity.notFound().build();
         folderRepository.deleteById(id);
         return ResponseEntity.ok("Deleted");
     }
 
-    // LIST CONTENTS
-    @GetMapping("/contents")
-    public ResponseEntity<?> contents(@RequestParam String email,
-                                       @RequestParam(required = false) Long folderId) {
-        User owner = userRepository.findByEmail(email).orElse(null);
-        if (owner == null) return ResponseEntity.badRequest().body("User not found");
+    // LIST
+    @GetMapping
+    public ResponseEntity<?> list(@RequestParam(required = false) Long parentId,
+            @RequestHeader("Authorization") String authHeader) {
+        User owner = getUserFromToken(authHeader);
+        if (owner == null)
+            return ResponseEntity.status(401).body("Unauthorized");
 
         List<Folder> subfolders;
-        List<FileMetadata> files;
-
-        if (folderId == null) {
+        if (parentId == null) {
             subfolders = folderRepository.findByOwnerAndParentFolderIsNull(owner);
-            files = fileRepository.findByOwnerAndFolderIsNull(owner);
         } else {
-            Folder folder = folderRepository.findById(folderId).orElse(null);
-            if (folder == null) return ResponseEntity.notFound().build();
-            subfolders = folderRepository.findByOwnerAndParentFolder(owner, folder);
-            files = fileRepository.findByOwnerAndFolder(owner, folder);
+            Folder parent = folderRepository.findById(parentId).orElse(null);
+            if (parent == null)
+                return ResponseEntity.notFound().build();
+            subfolders = folderRepository.findByOwnerAndParentFolder(owner, parent);
         }
 
-        return ResponseEntity.ok(Map.of("folders", subfolders, "files", files));
+        List<Map<String, Object>> result = subfolders.stream().map(folder -> {
+            long fileCount = fileRepository.findByOwnerAndFolder(owner, folder).size();
+            return Map.<String, Object>of(
+                    "id", folder.getId(),
+                    "name", folder.getName(),
+                    "fileCount", fileCount);
+        }).toList();
+
+        return ResponseEntity.ok(result);
     }
 
     // MOVE FILE TO FOLDER
     @PutMapping("/move-file/{fileId}")
     public ResponseEntity<?> moveFile(@PathVariable Long fileId,
-                                       @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            @RequestHeader("Authorization") String authHeader) {
+        User owner = getUserFromToken(authHeader);
+        if (owner == null)
+            return ResponseEntity.status(401).body("Unauthorized");
+
         Optional<FileMetadata> fileOpt = fileRepository.findById(fileId);
-        if (fileOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (fileOpt.isEmpty())
+            return ResponseEntity.notFound().build();
 
         FileMetadata file = fileOpt.get();
-
         if (body.get("folderId") == null) {
             file.setFolder(null);
         } else {

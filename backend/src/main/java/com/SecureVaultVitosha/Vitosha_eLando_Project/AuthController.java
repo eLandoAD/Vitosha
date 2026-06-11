@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,7 +28,7 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    
+
     @Autowired
     private ResetTokenRepository resetTokenRepository;
 
@@ -39,6 +40,7 @@ public class AuthController {
         String saltB64 = body.get("saltB64");
         String ivB64 = body.get("ivB64");
         String wrappedDekB64 = body.get("wrappedDekB64");
+        String username = body.get("username");
 
         if (email == null || email.isBlank()) {
             return ResponseEntity.badRequest().body("Email is required");
@@ -54,6 +56,7 @@ public class AuthController {
         }
 
         User user = new User();
+        user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setVerificationToken(UUID.randomUUID().toString());
@@ -63,7 +66,8 @@ public class AuthController {
         userRepository.save(user);
 
         System.out.println("Verify link: http://localhost:8080/auth/verify?token=" + user.getVerificationToken());
-        return ResponseEntity.status(201).body("Registered! Check console for verify link.");
+        return ResponseEntity.status(201)
+                .body(Map.of("verifyLink", "http://localhost:8080/auth/verify?token=" + user.getVerificationToken()));
     }
 
     // VERIFY EMAIL
@@ -77,7 +81,9 @@ public class AuthController {
         user.setVerified(true);
         user.setVerificationToken(null);
         userRepository.save(user);
-        return ResponseEntity.ok("Email verified!");
+        return ResponseEntity.status(302)
+                .header("Location", "http://localhost:4200/login")
+                .build();
     }
 
     // LOGIN
@@ -105,12 +111,12 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(email);
         return ResponseEntity.ok(Map.of(
-            "token", token,
-            "email", user.getEmail(),
-            "saltB64", user.getDekSalt() != null ? user.getDekSalt() : "",
-            "ivB64", user.getDekIv() != null ? user.getDekIv() : "",
-            "wrappedDekB64", user.getEncryptedDek() != null ? user.getEncryptedDek() : ""
-        ));
+                "username", user.getUsername() != null ? user.getUsername() : user.getEmail(),
+                "token", token,
+                "email", user.getEmail(),
+                "saltB64", user.getDekSalt() != null ? user.getDekSalt() : "",
+                "ivB64", user.getDekIv() != null ? user.getDekIv() : "",
+                "wrappedDekB64", user.getEncryptedDek() != null ? user.getEncryptedDek() : ""));
     }
 
     // SEND RESET LINK
@@ -118,7 +124,8 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
         String email = body.get("email");
         Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) return ResponseEntity.badRequest().body("User not found");
+        if (userOpt.isEmpty())
+            return ResponseEntity.badRequest().body("User not found");
 
         User user = userOpt.get();
         ResetToken resetToken = new ResetToken();
@@ -128,10 +135,11 @@ public class AuthController {
         resetTokenRepository.save(resetToken);
 
         System.out.println("Reset link: http://localhost:4200/reset-password?token=" + resetToken.getToken());
-        return ResponseEntity.ok("Reset link sent! Check console.");
+        return ResponseEntity
+                .ok(Map.of("resetLink", "http://localhost:4200/reset-password?token=" + resetToken.getToken()));
     }
 
-    // RESET PASSWORD
+    // RESET PASSWORD (forgot - files deleted)
     @PostMapping("/reset-password")
     @Transactional
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
@@ -142,7 +150,8 @@ public class AuthController {
         String newWrappedDekB64 = body.get("newWrappedDekB64");
 
         Optional<ResetToken> tokenOpt = resetTokenRepository.findByToken(token);
-        if (tokenOpt.isEmpty()) return ResponseEntity.badRequest().body("Invalid token");
+        if (tokenOpt.isEmpty())
+            return ResponseEntity.badRequest().body("Invalid token");
 
         ResetToken resetToken = tokenOpt.get();
         if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -158,5 +167,28 @@ public class AuthController {
 
         resetTokenRepository.deleteByUser(user);
         return ResponseEntity.ok("Password reset successful");
+    }
+
+    // CHANGE PASSWORD (logged in - files preserved)
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> body,
+            @RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer "))
+            return ResponseEntity.status(401).body("Unauthorized");
+
+        String token = authHeader.substring(7);
+        String email = jwtUtil.extractEmail(token);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty())
+            return ResponseEntity.status(404).body("User not found");
+
+        User user = userOpt.get();
+        user.setPasswordHash(passwordEncoder.encode(body.get("newPassword")));
+        user.setEncryptedDek(body.get("newWrappedDekB64"));
+        user.setDekSalt(body.get("newSaltB64"));
+        user.setDekIv(body.get("newIvB64"));
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Password changed successfully");
     }
 }

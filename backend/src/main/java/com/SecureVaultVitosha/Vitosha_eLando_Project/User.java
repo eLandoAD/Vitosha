@@ -1,6 +1,11 @@
 package com.SecureVaultVitosha.Vitosha_eLando_Project;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
@@ -20,6 +25,7 @@ public class User {
 
     private String verificationToken;
 
+    private String username;
     private String encryptedDek;
     private String dekSalt;
     private String dekIv;
@@ -28,14 +34,39 @@ public class User {
     public Long getId() {
         return id;
     }
-public String getEncryptedDek() { return encryptedDek; }
-public void setEncryptedDek(String encryptedDek) { this.encryptedDek = encryptedDek; }
 
-public String getDekSalt() { return dekSalt; }
-public void setDekSalt(String dekSalt) { this.dekSalt = dekSalt; }
+    public String getEncryptedDek() {
+        return encryptedDek;
+    }
 
-public String getDekIv() { return dekIv; }
-public void setDekIv(String dekIv) { this.dekIv = dekIv; }
+    public void setEncryptedDek(String encryptedDek) {
+        this.encryptedDek = encryptedDek;
+    }
+
+    public String getDekSalt() {
+        return dekSalt;
+    }
+
+    public void setDekSalt(String dekSalt) {
+        this.dekSalt = dekSalt;
+    }
+
+    public String getDekIv() {
+        return dekIv;
+    }
+
+    public void setDekIv(String dekIv) {
+        this.dekIv = dekIv;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
