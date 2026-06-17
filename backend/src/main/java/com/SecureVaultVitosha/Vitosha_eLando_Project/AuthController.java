@@ -65,9 +65,9 @@ public class AuthController {
         user.setEncryptedDek(wrappedDekB64);
         userRepository.save(user);
 
-        System.out.println("Verify link: http://localhost:8080/auth/verify?token=" + user.getVerificationToken());
+        System.out.println("Verify link: /api/auth/verify?token=" + user.getVerificationToken());
         return ResponseEntity.status(201)
-                .body(Map.of("verifyLink", "http://localhost:8080/auth/verify?token=" + user.getVerificationToken()));
+                .body(Map.of("verifyLink", "/api/auth/verify?token=" + user.getVerificationToken()));
     }
 
     // VERIFY EMAIL
@@ -82,7 +82,7 @@ public class AuthController {
         user.setVerificationToken(null);
         userRepository.save(user);
         return ResponseEntity.status(302)
-                .header("Location", "http://localhost:4200/login")
+                .header("Location", "/login")
                 .build();
     }
 
@@ -134,9 +134,9 @@ public class AuthController {
         resetToken.setExpiresAt(LocalDateTime.now().plusHours(1));
         resetTokenRepository.save(resetToken);
 
-        System.out.println("Reset link: http://localhost:4200/reset-password?token=" + resetToken.getToken());
+        System.out.println("Reset link: /reset-password?token=" + resetToken.getToken());
         return ResponseEntity
-                .ok(Map.of("resetLink", "http://localhost:4200/reset-password?token=" + resetToken.getToken()));
+                .ok(Map.of("resetLink", "/reset-password?token=" + resetToken.getToken()));
     }
 
     // RESET PASSWORD (forgot - files deleted)

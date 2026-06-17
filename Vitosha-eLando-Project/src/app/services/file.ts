@@ -13,8 +13,8 @@ export class File {
     public getFiles(folderId: number | null) {
         const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
         const url = folderId !== null
-            ? `http://localhost:8080/files?folderId=${folderId}`
-            : `http://localhost:8080/files`;
+            ? `/api/files?folderId=${folderId}`
+            : `/api/files`;
         return this.http.get(url, { headers });
     }
 
@@ -31,13 +31,13 @@ export class File {
         if (folderId !== null) {
             formData.append('folderId', folderId.toString());
         }
-        return this.http.post('http://localhost:8080/files/upload', formData, { headers }).toPromise();
+        return this.http.post('/api/files/upload', formData, { headers }).toPromise();
     }
 
     async download(fileId: number, fileName: string) {
         const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
         const dek = this.auth.getDek();
-        const response = await fetch('http://localhost:8080/files/' + fileId, { headers: { 'Authorization': 'Bearer ' + this.auth.getToken() } });
+        const response = await fetch('/api/files/' + fileId, { headers: { 'Authorization': 'Bearer ' + this.auth.getToken() } });
         const encryptedBuffer = await response.arrayBuffer();
         const ivB64 = response.headers.get('X-File-IV')!;
         const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
@@ -53,11 +53,11 @@ export class File {
 
     public delete(fileId: number) {
         const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
-        return this.http.delete('http://localhost:8080/files/' + fileId, { headers });
+        return this.http.delete('/api/files/' + fileId, { headers });
     }
 
     public renameFile(fileId: number, name: string) {
         const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
-        return this.http.put(`http://localhost:8080/files/rename/${fileId}`, { name }, { headers });
+        return this.http.put(`/api/files/rename/${fileId}`, { name }, { headers });
     }
 }

@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Service } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs/operators';
+import { tap } from '../../../node_modules/rxjs/dist/types/operators';
 import { Crypto } from './crypto';
 
 @Service()
@@ -14,11 +14,11 @@ export class Auth {
     private verifyLink: string | null = null;
 
     public register(email: string, username: string, password: string, saltB64: string, ivB64: string, wrappedDekB64: string) {
-        return this.http.post('http://localhost:8080/auth/register', { email, username, password, saltB64, ivB64, wrappedDekB64 });
+        return this.http.post('/api/auth/register', { email, username, password, saltB64, ivB64, wrappedDekB64 });
 
     }
     public login(email: string, password: string) {
-        return this.http.post<any>('http://localhost:8080/auth/login', { email, password }).pipe(
+        return this.http.post<any>('/api/auth/login', { email, password }).pipe(
             tap(async (response: any) => {
                 this.token = response.token;
                 if (response.saltB64 && response.ivB64 && response.wrappedDekB64) {

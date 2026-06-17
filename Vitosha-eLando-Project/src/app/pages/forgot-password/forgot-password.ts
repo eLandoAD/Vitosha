@@ -16,7 +16,7 @@ export class ForgotPassword {
   resetLink = signal<string | null>(null);
 
   public onSubmit(email: string) {
-    this.http.post<any>('http://localhost:8080/auth/forgot-password', { email }).subscribe({
+    this.http.post<any>('/api/auth/forgot-password', { email }).subscribe({
       next: (response: any) => this.resetLink.set(response.resetLink),
       error: (err) => console.log(err)
     });

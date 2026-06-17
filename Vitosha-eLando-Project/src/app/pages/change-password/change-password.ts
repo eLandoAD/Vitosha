@@ -19,7 +19,7 @@ export class ChangePassword {
 
   async onChangePassword(oldPassword: string, newPassword: string) {
     const loginResponse: any = await this.http.post(
-      'http://localhost:8080/auth/login',
+      '/api/auth/login',
       { email: this.auth.getUsername(), password: oldPassword }
     ).toPromise();
     const salt = Uint8Array.from(atob(loginResponse.saltB64), c => c.charCodeAt(0));
@@ -34,7 +34,7 @@ export class ChangePassword {
     const newIvB64 = btoa(String.fromCharCode(...new Uint8Array(newIv)));
     const newWrappedDekB64 = btoa(String.fromCharCode(...new Uint8Array(newWrappedDek)));
     const headers = new HttpHeaders({ 'Authorization': 'Bearer ' + this.auth.getToken() });
-    this.http.post('http://localhost:8080/auth/change-password', {
+    this.http.post('/api/auth/change-password', {
       newPassword,
       newSaltB64,
       newIvB64,

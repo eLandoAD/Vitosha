@@ -12,7 +12,7 @@ export class App {
   protected readonly title = signal('Vitosha-eLando-Project');
   private http = inject(HttpClient);
   constructor(){
-    this.http.get('http://localhost:8080/health').subscribe(response => console.log(response));
+    // Removed health check to fix prerendering during build
   }
   
 

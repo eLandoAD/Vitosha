@@ -27,7 +27,7 @@ export class ResetPassword {
     const newSaltB64 = btoa(String.fromCharCode(...newSalt));
     const newIvB64 = btoa(String.fromCharCode(...new Uint8Array(newIv)));
     const newWrappedDekB64 = btoa(String.fromCharCode(...new Uint8Array(newWrappedDek)));
-    this.http.post('http://localhost:8080/auth/reset-password', { token, newPassword, newSaltB64, newIvB64, newWrappedDekB64 }).subscribe({
+    this.http.post('/api/auth/reset-password', { token, newPassword, newSaltB64, newIvB64, newWrappedDekB64 }).subscribe({
       next: () => this.router.navigate(['/login']),
       error: (err) => {
         if (err.status === 200) this.router.navigate(['/login']);
